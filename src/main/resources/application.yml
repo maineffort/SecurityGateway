@@ -1,5 +1,10 @@
 server:
   port: 8761
+#  context-path: v2
+  
+
+
+  
 
 eureka:
   client:
@@ -7,3 +12,10 @@ eureka:
     fetchRegistry: false
   server:
     waitTimeInMsWhenSyncEmpty: 0
+    
+#springfox.documentation.swagger.v2.path=/swagger.json
+    
+    # prefix for all requests
+#server.contextPath=/v2
+
+# location of the swagger json
