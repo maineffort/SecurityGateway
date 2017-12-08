@@ -72,7 +72,8 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	private final static String USER_AGENT = "Mozilla/5.0";
 	private static final String ZAP_ADDRESS = "localhost";
 	private static final int ZAP_PORT = 8181;
-	private static final String ZAP_API_KEY = null; 													
+	private static final String ZAP_API_KEY = null; 	
+	private static final String TESTING_MODE = "strict";
 
 	public static ClientApi api = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 
@@ -124,7 +125,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		System.out.println("=========================== regsitry 02 ============================");
 		if((probationList.contains(info.getAppName())) && (! probationList.isEmpty())){
 			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + info.getHealthCheckUrl() + " already in probation list ? ");
-			System.out.println("checking the alternative scanning information per mciroservice -- " +  info.getIPAddr() + ":" + info.getPort());
+			System.out.println("checking the alternative scanning information per microservice -- " +  info.getIPAddr() + ":" + info.getPort());
 			System.out.println("========================    probationList.size() ======================= "  + probationList.size()); //		info.getIPAddr();
 
 			
@@ -343,9 +344,16 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 			System.out.println(result.toString());
 			
+			
+			
+			// get the summary of the test i.e. passed or failed
+			// the security policy modes are also enforced here
 			if(result.toString().equals("fine") || result.toString()=="fine"){
 				for (String instances : probationList) {
 					if(instances.equals(target))
+//						if (TESTING_MODE.equals("strict")) {
+//							
+//						}
 						
 						probationList.remove(target);
 					System.out.println(target + "removed from the probation list");
