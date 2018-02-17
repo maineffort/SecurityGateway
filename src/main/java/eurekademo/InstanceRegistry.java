@@ -56,9 +56,9 @@ import com.netflix.eureka.lease.Lease;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl;
 import com.netflix.eureka.resources.ServerCodecs;
 
+import ch.qos.logback.core.net.SyslogOutputStream;
 import eurekademo.InstanceInfo.InstanceStatus;
 import lombok.extern.apachecommons.CommonsLog;
-
 
 /**
  * @author Spencer Gibb
@@ -69,26 +69,23 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	private ApplicationContext ctxt;
 	private int defaultOpenForTrafficCount;
 	private static List<String> probationList = new ArrayList<String>(); // probation list for temporary registration
-	
+
 	private final static String USER_AGENT = "Mozilla/5.0";
 	private static final String ZAP_ADDRESS = "localhost";
 	private static final int ZAP_PORT = 8181;
-	private static final String ZAP_API_KEY = null; 	
+	private static final String ZAP_API_KEY = null;
 	private static final String TESTING_MODE = "strict";
 
 	public static ClientApi api = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
-	
 
-	
-	
-// register the instances that are enrolled in the service
+	// register the instances that are enrolled in the service
 	public InstanceRegistry(EurekaServerConfig serverConfig, EurekaClientConfig clientConfig, ServerCodecs serverCodecs,
 			EurekaClient eurekaClient, int expectedNumberOfRenewsPerMin, int defaultOpenForTrafficCount) {
 		super(serverConfig, clientConfig, serverCodecs, eurekaClient);
 
 		this.expectedNumberOfRenewsPerMin = expectedNumberOfRenewsPerMin;
 		this.defaultOpenForTrafficCount = defaultOpenForTrafficCount;
-		
+
 	}
 
 	@Override
@@ -99,11 +96,11 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	/**
 	 * If
 	 * {@link PeerAwareInstanceRegistryImpl#openForTraffic(ApplicationInfoManager, int)}
-	 * is called with a zero argument, it means that leases are not
-	 * automatically cancelled if the instance hasn't sent any renewals
-	 * recently. This happens for a standalone server. It seems like a bad
-	 * default, so we set it to the smallest non-zero value we can, so that any
-	 * instances that subsequently register can bump up the threshold.
+	 * is called with a zero argument, it means that leases are not automatically
+	 * cancelled if the instance hasn't sent any renewals recently. This happens for
+	 * a standalone server. It seems like a bad default, so we set it to the
+	 * smallest non-zero value we can, so that any instances that subsequently
+	 * register can bump up the threshold.
 	 */
 	@Override
 	public void openForTraffic(ApplicationInfoManager applicationInfoManager, int count) {
@@ -113,7 +110,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	@Override
 	public void register(InstanceInfo info, int leaseDuration, boolean isReplication) {
 		System.out.println("=========================== regsitry 01 ============================");
-		
+
 		try {
 			handleRegistration(info, leaseDuration, isReplication);
 		} catch (JSONException e) {
@@ -124,14 +121,16 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	}
 
 	@Override
-	public  void register(InstanceInfo info, final boolean isReplication) {
+	public void register(InstanceInfo info, final boolean isReplication) {
 		System.out.println("=========================== regsitry 02 ============================");
-		if((probationList.contains(info.getAppName())) && (! probationList.isEmpty())){
-			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + info.getHealthCheckUrl() + " already in probation list ? ");
-			System.out.println("checking the alternative scanning information per microservice -- " +  info.getIPAddr() + ":" + info.getPort());
-			System.out.println("========================    probationList.size() ======================= "  + probationList.size()); //		info.getIPAddr();
-			
-			
+		if ((probationList.contains(info.getAppName())) && (!probationList.isEmpty())) {
+			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + info.getHealthCheckUrl()
+					+ " already in probation list ? ");
+			System.out.println("checking the alternative scanning information per microservice -- " + info.getIPAddr()
+					+ ":" + info.getPort());
+			System.out.println(
+					"========================    probationList.size() ======================= " + probationList.size()); // info.getIPAddr();
+
 			try {
 				handleRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
 			} catch (JSONException e) {
@@ -140,22 +139,25 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			}
 			super.register(info, isReplication);
 		} else {
-		try {	
-			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + " added to probation list ? ");
-			probationList.add(info.getAppName());
-			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.STARTING);
-			
-			//set the instance as starting  ... not ready for traffic yet
-			
-			System.out.println("instance still in starting mode to allow time for security : "  +  info.getStatus());
-			handleTempRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
-		} catch (JSONException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClientApiException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			try {
+				System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + " added to probation list ? ");
+				probationList.add(info.getAppName());
+
+				// set the intabce status to starting similar to
+				// https://stackoverflow.com/questions/46123498/how-to-delay-eureka-client-registration-with-eureka-server
+				info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.STARTING);
+
+				// set the instance as starting ... not ready for traffic yet
+
+				System.out.println("instance still in starting mode to allow time for security : " + info.getStatus());
+				handleTempRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
+			} catch (JSONException | IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClientApiException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -163,7 +165,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	public boolean cancel(String appName, String serverId, boolean isReplication) {
 		handleCancelation(appName, serverId, isReplication);
 		return super.cancel(appName, serverId, isReplication);
-//		SecurityTest.tester(info.getHomePageUrl());
+		// SecurityTest.tester(info.getHomePageUrl());
 
 	}
 
@@ -198,31 +200,33 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		publishEvent(new EurekaInstanceCanceledEvent(this, appName, id, isReplication));
 	}
 
-	
-	// assign a temporary vip within a short lease time, scan the application and based  on the results reassign a more exclusive IP address within the local ip address range
+	// assign a temporary vip within a short lease time, scan the application and
+	// based on the results reassign a more exclusive IP address within the local ip
+	// address range
 	private void handleRegistration(InstanceInfo info, int leaseDuration, boolean isReplication) throws JSONException {
 		log("register " + info.getAppName() + ", vip " + info.getVIPAddress() + ", leaseDuration " + leaseDuration
 				+ ", isReplication " + isReplication);
 		publishEvent(new EurekaInstanceRegisteredEvent(this, info, leaseDuration, isReplication));
 	}
-		
-//		SecurityTest.tester(info.getHomePageUrl());
-		
-		private void handleTempRegistration(InstanceInfo info, int leaseDuration, boolean isReplication) throws JSONException, IOException, ClientApiException {
-			
-			System.out.println("============  probationary registration!!  ==========  : " + info.getHomePageUrl() );
 
-			log("probationary register " + info.getAppName() + ", vip " + info.getVIPAddress() + ", leaseDuration " + leaseDuration
-					+ ", isReplication " + isReplication);
-			
-			// trigger pre-registration security test , ideally should send this request to the security service
-			preRegistrationSecurityTest(info.getHomePageUrl(), info, isReplication);
-			
-//			publishEvent(new EurekaInstanceRegisteredEvent(this, info, leaseDuration, isReplication));
-			// if the results are fine... else abort
-			register(info, isReplication);
-		
-		
+	// SecurityTest.tester(info.getHomePageUrl());
+
+	private void handleTempRegistration(InstanceInfo info, int leaseDuration, boolean isReplication)
+			throws JSONException, IOException, ClientApiException {
+
+		System.out.println("============  probationary registration!!  ==========  : " + info.getHomePageUrl());
+
+		log("probationary register " + info.getAppName() + ", vip " + info.getVIPAddress() + ", leaseDuration "
+				+ leaseDuration + ", isReplication " + isReplication);
+
+		// trigger pre-registration security test , ideally should send this request to
+		// the security service
+		preRegistrationSecurityTest(info.getHomePageUrl(), info, isReplication);
+
+		// publishEvent(new EurekaInstanceRegisteredEvent(this, info, leaseDuration,
+		// isReplication));
+		// if the results are fine... else abort
+		register(info, isReplication);
 
 	}
 
@@ -234,7 +238,6 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 	public void publishEvent(ApplicationEvent applicationEvent) {
 		this.ctxt.publishEvent(applicationEvent);
-		
 
 	}
 
@@ -245,9 +248,8 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		}
 		return leaseDuration;
 	}
-	
-	
-	public static void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication) throws JSONException, ClientApiException{
+
+	public void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication) throws JSONException, ClientApiException{
 
 		
 		long startTime = System.currentTimeMillis();
@@ -320,13 +322,23 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	
 			
 			
-			List<Alert> alertList = api2.getAlerts(target, 0, 4);
+			List<Alert> alertList = api2.getAlerts(target, 0, 10);
 			for (Alert alert : alertList) {
-				
+				ApiResponse hh = api2.core.numberOfAlerts(target);
+				System.out.println("the number of alerts is : " + hh);
 				System.out.println(alert.getAlert());
 				
 			}
+			
+			
+			//TODO  policy check to confirm if to allow instance
+			System.out.println("setting the instance status to UP i.e.ready to receive traffic !");
 			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+			
+			//assuming that the instance failed the security test -- not effective here better approach required	
+			
+//			handleCancelation(info.getAppGroupName(), info.getId(), false);
+		
 			
 			String reportAggregator = "http://localhost:8081/EventService02/getreport";
 					DefaultHttpClient client = new DefaultHttpClient();
