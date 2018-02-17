@@ -32,7 +32,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.cloud.netflix.eureka.server.event.EurekaInstanceCanceledEvent;
@@ -41,6 +40,7 @@ import org.springframework.cloud.netflix.eureka.server.event.EurekaInstanceRenew
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
+import org.zaproxy.clientapi.core.Alert;
 import org.zaproxy.clientapi.core.ApiResponse;
 import org.zaproxy.clientapi.core.ApiResponseElement;
 import org.zaproxy.clientapi.core.ClientApi;
@@ -56,6 +56,7 @@ import com.netflix.eureka.lease.Lease;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl;
 import com.netflix.eureka.resources.ServerCodecs;
 
+import eurekademo.InstanceInfo.InstanceStatus;
 import lombok.extern.apachecommons.CommonsLog;
 
 
@@ -76,6 +77,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	private static final String TESTING_MODE = "strict";
 
 	public static ClientApi api = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
+	
 
 	
 	
@@ -86,6 +88,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 		this.expectedNumberOfRenewsPerMin = expectedNumberOfRenewsPerMin;
 		this.defaultOpenForTrafficCount = defaultOpenForTrafficCount;
+		
 	}
 
 	@Override
@@ -127,7 +130,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + info.getHealthCheckUrl() + " already in probation list ? ");
 			System.out.println("checking the alternative scanning information per microservice -- " +  info.getIPAddr() + ":" + info.getPort());
 			System.out.println("========================    probationList.size() ======================= "  + probationList.size()); //		info.getIPAddr();
-
+			
 			
 			try {
 				handleRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
@@ -140,6 +143,11 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		try {	
 			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + " added to probation list ? ");
 			probationList.add(info.getAppName());
+			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.STARTING);
+			
+			//set the instance as starting  ... not ready for traffic yet
+			
+			System.out.println("instance still in starting mode to allow time for security : "  +  info.getStatus());
 			handleTempRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
 		} catch (JSONException | IOException e) {
 			// TODO Auto-generated catch block
@@ -246,7 +254,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		
 
 		ClientApi api2 = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
-		System.out.println("+===================  " + target);
+		System.out.println(" Prepping for pre-assessment security test@instance regaistry  " + target);
 		String swaggerUrl = target+"v2/api-docs";
 
 		System.out.println("requesting OpenAPI from swaggerUrl : " + swaggerUrl);
@@ -254,11 +262,11 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		 map.put("url", swaggerUrl);
 			ApiResponse openApiResp = 
 					api2.callApi("openapi", "action", "importUrl", map); //importUrl
-			System.out.println("exploring the api for using OpenAPI " + swaggerUrl);
+			System.out.println("exploring the api for using OpenAPI  @instance registry " + swaggerUrl);
 			
 
 		String scanResult = null;
-		System.out.println("prepping to test " + target);
+		System.out.println("prepping to test target : " + target);
 		try {
 			// Start spidering the target TODO - fetch the OpenAPI and scan the target application
 			System.out.println("Spider : " + target);
@@ -274,8 +282,9 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			// Poll the status until it completes
 			while (true) {
 				Thread.sleep(1000);
+				
 				progress = Integer.parseInt(((ApiResponseElement) api2.spider.status(scanid)).getValue());
-				System.out.println("Spider progress for : " + target + " ---- " +  progress + "%");
+				System.out.println("Spider progress for : " + target + " ---- " +  progress + "%"  + "@instance registry" );
 				if (progress >= 100) {
 					break;
 				}
@@ -287,7 +296,9 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 			System.out.println("Active scan for : " + target);
 //			resp = api2.ascan.scan(target, null, null, null, null, null);
+			//TODO --  create a one minute or time-based timing
 			resp = api2.ascan.scan(target, null, null, "Default Policy", null, null);
+			
 
 			// The scan now returns a scan id to support concurrent scanning
 			scanid = ((ApiResponseElement) resp).getValue();
@@ -295,14 +306,28 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 			// Poll the status until it completes
 			while (true) {
-				Thread.sleep(5000);
-				progress = Integer.parseInt(((ApiResponseElement) api2.ascan.status(scanid)).getValue());
-				System.out.println("Active Scan progress for : " + target + " ---- " +  progress + "%");
-				if (progress >= 100) {
-					break;
-				}
+				Thread.sleep(60000);
+				System.out.println("stopping active  scan after one minute ");
+				break;
+//				Thread.sleep(5000);
+//				progress = Integer.parseInt(((ApiResponseElement) api2.ascan.status(scanid)).getValue());
+//				System.out.println("Active Scan progress for : " + target + " ---- " +  progress + "%");
+//				if (progress >= 100) {
+//					break;
+//				}
 			}
-			System.out.println("Active Scan complete for " + target);
+			System.out.println("Active Scan complete for " + target + " "  + "@instance registry" );
+	
+			
+			
+			List<Alert> alertList = api2.getAlerts(target, 0, 4);
+			for (Alert alert : alertList) {
+				
+				System.out.println(alert.getAlert());
+				
+			}
+			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+			
 			String reportAggregator = "http://localhost:8081/EventService02/getreport";
 					DefaultHttpClient client = new DefaultHttpClient();
 			
@@ -310,24 +335,27 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			// trigger the scan report retrieval		
 			HttpPost post = new HttpPost(reportAggregator);
 			post.addHeader("User-Agent", USER_AGENT);
-			JSONObject objecty = new JSONObject();
-			objecty.put("target", target);//http://localhost:8761/
-			String request = objecty.toString();
+//			JSONObject objecty = new JSONObject();
+//			objecty.put("target", target);//http://localhost:8761/
+//			String request = objecty.toString();
 			
 			
 			StringEntity input = null;
 			 
 			try {
-				input = new StringEntity(request);
+				input = new StringEntity(target);
 			} catch (UnsupportedEncodingException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			input.setContentType(MediaType.APPLICATION_JSON);
+			input.setContentType(MediaType.TEXT_PLAIN);
 			post.setEntity(input); 
 //			post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
+			System.out.println("Getting the report for the tested microservice : ");
+			
 			HttpResponse response = client.execute(post);	
+			// get the results 
 			System.out.println("\nSending 'POST' request to URL : " + reportAggregator);
 			System.out.println("Post parameters : " + post.getEntity());
 			System.out.println("Response Code : " +
