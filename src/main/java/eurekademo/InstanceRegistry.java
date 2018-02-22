@@ -28,9 +28,11 @@ import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONException;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -321,13 +323,13 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			System.out.println("Active Scan complete for " + target + " "  + "@instance registry" );
 	
 			
-			
+			String alertString = null;
 			List<Alert> alertList = api2.getAlerts(target, 0, 10);
 			for (Alert alert : alertList) {
 				ApiResponse hh = api2.core.numberOfAlerts(target);
 				System.out.println("the number of alerts is : " + hh);
 				System.out.println(alert.getAlert());
-				
+				alertString = alertList.get(0).toString();
 			}
 			
 			
@@ -339,11 +341,10 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			
 //			handleCancelation(info.getAppGroupName(), info.getId(), false);
 		
+//			String book = "{\"title\" : \"Hello Koding 2\", \"description\": \"Simple coding examples and tutorials 2\"}";
+			String reportAggregator = "http://localhost:8081/alerts";
 			
-			String reportAggregator = "http://localhost:8081/EventService02/getreport";
-					DefaultHttpClient client = new DefaultHttpClient();
-			
-					
+		   HttpClient client = HttpClientBuilder.create().build();	
 			// trigger the scan report retrieval		
 			HttpPost post = new HttpPost(reportAggregator);
 			post.addHeader("User-Agent", USER_AGENT);
@@ -355,12 +356,12 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			StringEntity input = null;
 			 
 			try {
-				input = new StringEntity(target);
+				input = new StringEntity(alertString);
 			} catch (UnsupportedEncodingException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			input.setContentType(MediaType.TEXT_PLAIN);
+			input.setContentType(MediaType.APPLICATION_JSON);
 			post.setEntity(input); 
 //			post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
