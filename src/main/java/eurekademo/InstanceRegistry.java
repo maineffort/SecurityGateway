@@ -123,7 +123,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	public void register(InstanceInfo info, final boolean isReplication) {
 		System.out.println("=========================== regsitry 02 ============================");
 		if ((probationList.contains(info.getAppName())) && (!probationList.isEmpty())) {
-			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + info.getHealthCheckUrl()
+			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + "  " +  info.getHealthCheckUrl()
 					+ " already in probation list ? ");
 			System.out.println("checking the alternative scanning information per microservice -- " + info.getIPAddr()
 					+ ":" + info.getPort());
@@ -131,6 +131,8 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 					"========================    probationList.size() ======================= " + probationList.size()); // info.getIPAddr();
 
 			try {
+				
+				System.out.println("handlieRegistration");
 				handleRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
@@ -263,10 +265,10 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 //		obj.put("microserviceIpAddress", microserviceIpAddress);
 //		obj.put("microserviceName", microserviceName);
 //		obj.put("microservicePort", microservicePort);
-
+		target = "http://localhost:"+info.getPort();
 		ClientApi api2 = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 		System.out.println(" Prepping for pre-assessment security test@instance registry  " + target);
-		String swaggerUrl = target+"v2/api-docs";
+		String swaggerUrl = "http://localhost:"+info.getPort()+"/v2/api-docs";
 
 		System.out.println("requesting OpenAPI from swaggerUrl : " + swaggerUrl);
 		Map<String, String> map = new HashMap<>();
@@ -347,11 +349,11 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 				mut.put("confidence", alert.getConfidence());
 				mut.put("url", alert.getUrl());
 				mut.put("param", alert.getParam());
-//				mut.put("solution", alert.getSolution());
+				mut.put("solution", alert.getSolution());
 				mut.put("cweid", alert.getCweId());
 				mut.put("wascid", alert.getWascId());
 				mut.put("attack", alert.getAttack());
-//				mut.put("description", alert.getDescription());
+				mut.put("description", alert.getDescription());
 				mut.put("evidence", alert.getEvidence());
 				mut.put("name", alert.getName());
 				mut.put("pluginid", alert.getPluginId());
