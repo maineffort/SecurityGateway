@@ -358,7 +358,6 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 				mut.put("reference", alert.getReference());
 				mut.put("reliability", alert.getReliability());
 				
-			}
 //			alertString = alertList.get(1).toString() + mut.toString();
 			
 			
@@ -417,24 +416,26 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 			System.out.println(result.toString());
 			
-			
-			
-			// get the summary of the test i.e. passed or failed
-			// the security policy modes are also enforced here
-			if(result.toString().equals("fine") || result.toString()=="fine"){
-				for (String instances : probationList) {
-					if(instances.equals(target))
-//						if (TESTING_MODE.equals("strict")) {
-//							
-//						}
-						
-						probationList.remove(target);
-					System.out.println(target + "removed from the probation list");
-					System.out.println(instances);
-				}
-				
-				
 			}
+			probationList.remove(target);
+
+//		}
+//			// get the summary of the test i.e. passed or failed
+//			// the security policy modes are also enforced here
+//			if(result.toString().equals("fine") || result.toString()=="fine"){
+//				for (String instances : probationList) {
+//					if(instances.equals(target))
+////						if (TESTING_MODE.equals("strict")) {
+////							
+////						}
+//						
+//						probationList.remove(target);
+//					System.out.println(target + "removed from the probation list");
+//					System.out.println(instances);
+//				}
+//				
+//				
+//			}
 //			GetTest.getJsonRReport(target);
 		} catch (Exception e) {
 			System.out.println("Exception : " + e.getMessage());
