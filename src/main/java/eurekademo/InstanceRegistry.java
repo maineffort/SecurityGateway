@@ -32,6 +32,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.cloud.netflix.eureka.server.event.EurekaInstanceCanceledEvent;
@@ -56,8 +57,6 @@ import com.netflix.eureka.lease.Lease;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl;
 import com.netflix.eureka.resources.ServerCodecs;
 
-import ch.qos.logback.core.net.SyslogOutputStream;
-import eurekademo.InstanceInfo.InstanceStatus;
 import lombok.extern.apachecommons.CommonsLog;
 
 /**
@@ -251,12 +250,22 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 	public void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication) throws JSONException, ClientApiException{
 
-		
+		JSONObject obj = new JSONObject();
 		long startTime = System.currentTimeMillis();
-		
+//		String microserviceName = info.getAppName();
+//		int microservicePort = info.getPort();
+//		String microserviceIpAddress = info.getIPAddr();
+//		String microserviceId = info.getId();
+		String timeStamp = SecurityTest.getTime();
+		String alertString;
+//		obj.put("microserviceId",microserviceId);
+//		obj.put("timeStamp", timeStamp);
+//		obj.put("microserviceIpAddress", microserviceIpAddress);
+//		obj.put("microserviceName", microserviceName);
+//		obj.put("microservicePort", microservicePort);
 
 		ClientApi api2 = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
-		System.out.println(" Prepping for pre-assessment security test@instance regaistry  " + target);
+		System.out.println(" Prepping for pre-assessment security test@instance registry  " + target);
 		String swaggerUrl = target+"v2/api-docs";
 
 		System.out.println("requesting OpenAPI from swaggerUrl : " + swaggerUrl);
@@ -300,7 +309,6 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 //			resp = api2.ascan.scan(target, null, null, null, null, null);
 			//TODO --  create a one minute or time-based timing
 			resp = api2.ascan.scan(target, null, null, "Default Policy", null, null);
-			
 
 			// The scan now returns a scan id to support concurrent scanning
 			scanid = ((ApiResponseElement) resp).getValue();
@@ -310,6 +318,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			while (true) {
 				Thread.sleep(60000);
 				System.out.println("stopping active  scan after one minute ");
+				api2.ascan.stop(scanid);
 				break;
 //				Thread.sleep(5000);
 //				progress = Integer.parseInt(((ApiResponseElement) api2.ascan.status(scanid)).getValue());
@@ -320,7 +329,12 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			}
 			System.out.println("Active Scan complete for " + target + " "  + "@instance registry" );
 	
-			
+			JSONObject mut = new JSONObject();
+			mut.put("microserviceName", info.getAppName());//http://localhost:8761/
+			mut.put("microservicePort", info.getPort());
+			mut.put("microserviceIpAddress", info.getIPAddr());
+			mut.put("microserviceId", info.getId());
+			mut.put("timeStamp", timeStamp);
 			
 			List<Alert> alertList = api2.getAlerts(target, 0, 10);
 			for (Alert alert : alertList) {
@@ -328,11 +342,29 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 				System.out.println("the number of alerts is : " + hh);
 				System.out.println(alert.getAlert());
 				
+				mut.put("alert", alert.getAlert());
+				mut.put("risk", alert.getRisk());
+				mut.put("confidence", alert.getConfidence());
+				mut.put("url", alert.getUrl());
+				mut.put("param", alert.getParam());
+//				mut.put("solution", alert.getSolution());
+				mut.put("cweid", alert.getCweId());
+				mut.put("wascid", alert.getWascId());
+				mut.put("attack", alert.getAttack());
+//				mut.put("description", alert.getDescription());
+				mut.put("evidence", alert.getEvidence());
+				mut.put("name", alert.getName());
+				mut.put("pluginid", alert.getPluginId());
+				mut.put("reference", alert.getReference());
+				mut.put("reliability", alert.getReliability());
+				
 			}
+//			alertString = alertList.get(1).toString() + mut.toString();
 			
 			
 			//TODO  policy check to confirm if to allow instance
 			System.out.println("setting the instance status to UP i.e.ready to receive traffic !");
+			System.out.println("alertString : ---- " + mut.toString().toString());
 			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
 			
 			//assuming that the instance failed the security test -- not effective here better approach required	
@@ -340,31 +372,32 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 //			handleCancelation(info.getAppGroupName(), info.getId(), false);
 		
 			
-			String reportAggregator = "http://localhost:8081/EventService02/getreport";
+			String reportAggregator = "http://localhost:8081/alerts";
 					DefaultHttpClient client = new DefaultHttpClient();
 			
 					
 			// trigger the scan report retrieval		
 			HttpPost post = new HttpPost(reportAggregator);
 			post.addHeader("User-Agent", USER_AGENT);
-//			JSONObject objecty = new JSONObject();
-//			objecty.put("target", target);//http://localhost:8761/
-//			String request = objecty.toString();
+			
+//			String request = mut.toString();
 			
 			
 			StringEntity input = null;
 			 
 			try {
-				input = new StringEntity(target);
+				input = new StringEntity(mut.toString().toString());
 			} catch (UnsupportedEncodingException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			input.setContentType(MediaType.TEXT_PLAIN);
+			
+			System.out.println("sending the result : " + input);
+			input.setContentType(MediaType.APPLICATION_JSON);
 			post.setEntity(input); 
 //			post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
-			System.out.println("Getting the report for the tested microservice : ");
+			System.out.println("Sending persistence request for : ");
 			
 			HttpResponse response = client.execute(post);	
 			// get the results 

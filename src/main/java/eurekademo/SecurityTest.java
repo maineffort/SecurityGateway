@@ -14,6 +14,8 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.zaproxy.clientapi.core.ApiResponse;
@@ -159,6 +161,17 @@ public class SecurityTest {
 		System.out.println(result.toString());
 	}
 	
+	public static String getTime() {
+
+		DateTime date = new DateTime();
+		DateTimeZone cet = DateTimeZone.forID("CET");
+		DateTime dateR = date.withZone(cet);
+
+		System.out.println(date);
+
+		return dateR.toString();
+
+	}
 	
 	public void addInstance(String instanceName){
 		
@@ -174,5 +187,7 @@ public class SecurityTest {
 			}
 		}
 	}
+	
+	
 
 }
