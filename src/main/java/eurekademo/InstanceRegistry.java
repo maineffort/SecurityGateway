@@ -19,6 +19,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +44,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.zaproxy.clientapi.core.Alert;
+import org.zaproxy.clientapi.core.Alert.Risk;
 import org.zaproxy.clientapi.core.ApiResponse;
 import org.zaproxy.clientapi.core.ApiResponseElement;
 import org.zaproxy.clientapi.core.ClientApi;
@@ -123,7 +126,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	public void register(InstanceInfo info, final boolean isReplication) {
 		System.out.println("=========================== regsitry 02 ============================");
 		if ((probationList.contains(info.getAppName())) && (!probationList.isEmpty())) {
-			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + "  " +  info.getHealthCheckUrl()
+			System.out.println(info.getAppName() + "   " + info.getHomePageUrl() + "  " + info.getHealthCheckUrl()
 					+ " already in probation list ? ");
 			System.out.println("checking the alternative scanning information per microservice -- " + info.getIPAddr()
 					+ ":" + info.getPort());
@@ -131,8 +134,8 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 					"========================    probationList.size() ======================= " + probationList.size()); // info.getIPAddr();
 
 			try {
-				
-				System.out.println("handlieRegistration");
+
+				System.out.println("handleRegistration");
 				handleRegistration(info, resolveInstanceLeaseDuration(info), isReplication);
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
@@ -250,42 +253,55 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		return leaseDuration;
 	}
 
-	public void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication) throws JSONException, ClientApiException{
+	public void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication)
+			throws JSONException, ClientApiException, MalformedURLException {
 
 		JSONObject obj = new JSONObject();
 		long startTime = System.currentTimeMillis();
-//		String microserviceName = info.getAppName();
-//		int microservicePort = info.getPort();
-//		String microserviceIpAddress = info.getIPAddr();
-//		String microserviceId = info.getId();
+		String riskCheck = null;
+		int lowRiskCount = 0;
+		int mediumRiskCount = 0;
+		int highRiskCount = 0;
+		int informationalRiskCount = 0;
+		List<Risk> riskList = new ArrayList<>();
+	
 		String timeStamp = SecurityTest.getTime();
-		String alertString;
-//		obj.put("microserviceId",microserviceId);
-//		obj.put("timeStamp", timeStamp);
-//		obj.put("microserviceIpAddress", microserviceIpAddress);
-//		obj.put("microserviceName", microserviceName);
-//		obj.put("microservicePort", microservicePort);
-		target = "http://localhost:"+info.getPort();
-		ClientApi api2 = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
+
+		ClientApi zapClient = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 		System.out.println(" Prepping for pre-assessment security test@instance registry  " + target);
-		String swaggerUrl = "http://localhost:"+info.getPort()+"/v2/api-docs";
+	
+		// test for gateway default port -- workaround
+		URL mutURL;
+		String url;
+		int port;
+		if (info.getAppName().equalsIgnoreCase("gateway")) {
+			url = info.getHealthCheckUrl();
+			mutURL = new URL(info.getHealthCheckUrl());
+			port = mutURL.getPort();
+		} else {
+			port = info.getPort();
+		}
+		target = "http://localhost:" + port;
+
+		// append the OpenAPI document retrieval endpoint
+		String swaggerUrl = "http://localhost:" + port + "/v2/api-docs";
 
 		System.out.println("requesting OpenAPI from swaggerUrl : " + swaggerUrl);
 		Map<String, String> map = new HashMap<>();
-		 map.put("url", swaggerUrl);
-			ApiResponse openApiResp = 
-					api2.callApi("openapi", "action", "importUrl", map); //importUrl
-			System.out.println("exploring the api for using OpenAPI  @instance registry " + swaggerUrl);
-			
+		map.put("url", swaggerUrl);
+		ApiResponse openApiResp = zapClient.callApi("openapi", "action", "importUrl", map); // importUrl
+		System.out.println("exploring the api for using OpenAPI  @instance registry " + swaggerUrl);
 
 		String scanResult = null;
 		System.out.println("prepping to test target : " + target);
 		try {
-			// Start spidering the target TODO - fetch the OpenAPI and scan the target application
+			// Start spidering the target TODO - fetch the OpenAPI and scan the target
+			// application
 			System.out.println("Spider : " + target);
-//			ApiResponse resp = api2.spider.scan(ZAP_API_KEY, target, null, null, null, null);
-			ApiResponse resp = api2.spider.scan(target, "10", null, null, null);
-			
+			// ApiResponse resp = api2.spider.scan(ZAP_API_KEY, target, null, null, null,
+			// null);
+			ApiResponse resp = zapClient.spider.scan(target, "10", null, null, null);
+
 			String scanid;
 			int progress;
 
@@ -295,9 +311,10 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			// Poll the status until it completes
 			while (true) {
 				Thread.sleep(1000);
-				
-				progress = Integer.parseInt(((ApiResponseElement) api2.spider.status(scanid)).getValue());
-				System.out.println("Spider progress for : " + target + " ---- " +  progress + "%"  + "@instance registry" );
+
+				progress = Integer.parseInt(((ApiResponseElement) zapClient.spider.status(scanid)).getValue());
+				System.out
+						.println("Spider progress for : " + target + " ---- " + progress + "% ");
 				if (progress >= 100) {
 					break;
 				}
@@ -307,45 +324,60 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			// Give the passive scanner a chance to complete
 			Thread.sleep(2000);
 
+			// can the passive scan work ??
+			// zapClient.pscan.setEnabled("true");
+			// zapClient.pscan.enableAllScanners();
 			System.out.println("Active scan for : " + target);
-//			resp = api2.ascan.scan(target, null, null, null, null, null);
-			//TODO --  create a one minute or time-based timing
-			resp = api2.ascan.scan(target, null, null, "Default Policy", null, null);
+			// resp = api2.ascan.scan(target, null, null, null, null, null);
+			resp = zapClient.ascan.scan(target, null, null, "Insane Policy", null, null);// Advanced Policy-- the number
+																							// of alerts is : 58 |
+																							// Default Policy |Hyper
+																							// Policy
 
 			// The scan now returns a scan id to support concurrent scanning
 			scanid = ((ApiResponseElement) resp).getValue();
 			System.out.println("Scan Idd : => " + ((ApiResponseElement) resp).getValue());
-
+			ApiResponse testResponse;
 			// Poll the status until it completes
+//			int testDuration = 60000;
 			while (true) {
-				Thread.sleep(60000);
+				
+				progress = Integer.parseInt(((ApiResponseElement) zapClient.ascan.status(scanid)).getValue());
+				Thread.sleep(60000);// 5 minutes test 300000 2 minute
 				System.out.println("stopping active  scan after one minute ");
-				api2.ascan.stop(scanid);
+				zapClient.ascan.stop(scanid);
 				break;
-//				Thread.sleep(5000);
-//				progress = Integer.parseInt(((ApiResponseElement) api2.ascan.status(scanid)).getValue());
-//				System.out.println("Active Scan progress for : " + target + " ---- " +  progress + "%");
-//				if (progress >= 100) {
-//					break;
-//				}
+				// Thread.sleep(5000);
+				// System.out.println("Active Scan progress for : " + target + " ---- " +
+				// progress + "%");
+				// if (progress >= 100) {
+				// break;
+				// }
 			}
-			System.out.println("Active Scan complete for " + target + " "  + "@instance registry" );
-	
+			System.out.println("Active Scan complete for " + target + " " + "@instance registry");
+			// testResponse = zapClient.spider.fullResults(scanid);
+			// System.out.println("########## Results based on testResponse; =
+			// zapClient.spider.fullResults(scanid); ###########");
+			// System.out.println(testResponse = zapClient.spider.fullResults(scanid));
 			JSONObject mut = new JSONObject();
-			mut.put("microserviceName", info.getAppName());//http://localhost:8761/
-			mut.put("microservicePort", info.getPort());
+			mut.put("microserviceName", info.getAppName());// http://localhost:8761/
+			mut.put("microservicePort", port);
 			mut.put("microserviceIpAddress", info.getIPAddr());
 			mut.put("microserviceId", info.getId());
 			mut.put("timeStamp", timeStamp);
-			
-			List<Alert> alertList = api2.getAlerts(target, 0, 10);
+
+			ApiResponse hh = zapClient.core.numberOfAlerts(target);
+			List<Alert> alertList = zapClient.getAlerts(target, 0, 0);
+			// zapClient.core.alerts(target, start, count);			
+
+			System.out.println("the number of alerts is : " + hh);
 			for (Alert alert : alertList) {
-				ApiResponse hh = api2.core.numberOfAlerts(target);
-				System.out.println("the number of alerts is : " + hh);
-				System.out.println(alert.getAlert());
-				
+//				System.out.println(alert.getAlert());
 				mut.put("alert", alert.getAlert());
 				mut.put("risk", alert.getRisk());
+//				System.out.println("risk :" + alert.getRisk());
+				riskList.add(alert.getRisk());
+//				riskCheck = String.valueOf(alert.getRisk());
 				mut.put("confidence", alert.getConfidence());
 				mut.put("url", alert.getUrl());
 				mut.put("param", alert.getParam());
@@ -359,56 +391,51 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 				mut.put("pluginid", alert.getPluginId());
 				mut.put("reference", alert.getReference());
 				mut.put("reliability", alert.getReliability());
-				
-//			alertString = alertList.get(1).toString() + mut.toString();
+
+			}			
 			
-			
-			//TODO  policy check to confirm if to allow instance
+			// TODO policy check to confirm if to allow instance
 			System.out.println("setting the instance status to UP i.e.ready to receive traffic !");
 			System.out.println("alertString : ---- " + mut.toString().toString());
-			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
-			
-			//assuming that the instance failed the security test -- not effective here better approach required	
-			
-//			handleCancelation(info.getAppGroupName(), info.getId(), false);
-		
-			
+//			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+
+			// assuming that the instance failed the security test -- not effective here
+			// better approach required
+
+			// handleCancelation(info.getAppGroupName(), info.getId(), false);
+
 			String reportAggregator = "http://localhost:8081/alerts";
-					DefaultHttpClient client = new DefaultHttpClient();
-			
-					
-			// trigger the scan report retrieval		
+			DefaultHttpClient client = new DefaultHttpClient();
+
+			// trigger the scan report retrieval
 			HttpPost post = new HttpPost(reportAggregator);
 			post.addHeader("User-Agent", USER_AGENT);
-			
-//			String request = mut.toString();
-			
-			
+
+			// String request = mut.toString();
+
 			StringEntity input = null;
-			 
+
 			try {
 				input = new StringEntity(mut.toString().toString());
 			} catch (UnsupportedEncodingException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
-			
+
 			System.out.println("sending the result : " + input);
 			input.setContentType(MediaType.APPLICATION_JSON);
-			post.setEntity(input); 
-//			post.setEntity(new UrlEncodedFormEntity(urlParameters));
+			post.setEntity(input);
+			// post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
 			System.out.println("Sending persistence request for : ");
-			
-			HttpResponse response = client.execute(post);	
-			// get the results 
+
+			HttpResponse response = client.execute(post);
+			// get the results
 			System.out.println("\nSending 'POST' request to URL : " + reportAggregator);
 			System.out.println("Post parameters : " + post.getEntity());
-			System.out.println("Response Code : " +
-	                                    response.getStatusLine().getStatusCode());
+			System.out.println("Response Code : " + response.getStatusLine().getStatusCode());
 
-			BufferedReader rd = new BufferedReader(
-	                        new InputStreamReader(response.getEntity().getContent()));
+			BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
 
 			StringBuffer result = new StringBuffer();
 			String line = "";
@@ -417,39 +444,90 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			}
 
 			System.out.println(result.toString());
-			
-			}
-			probationList.remove(target);
 
-//		}
-//			// get the summary of the test i.e. passed or failed
-//			// the security policy modes are also enforced here
-//			if(result.toString().equals("fine") || result.toString()=="fine"){
-//				for (String instances : probationList) {
-//					if(instances.equals(target))
-////						if (TESTING_MODE.equals("strict")) {
-////							
-////						}
-//						
-//						probationList.remove(target);
-//					System.out.println(target + "removed from the probation list");
-//					System.out.println(instances);
+			// }
+//			probationList.remove(target);
+			System.out.println("########### Result Summary ####################");
+			for (Risk risks : riskList) {
+				riskCheck=String.valueOf(risks);
+				
+				if (riskCheck.equalsIgnoreCase("High")) {
+					highRiskCount++;
+				} else if (riskCheck.equalsIgnoreCase("Medium")) {
+					mediumRiskCount++;
+				} else if (riskCheck.equalsIgnoreCase("Low")) {
+					lowRiskCount++;
+				} else if (riskCheck.equalsIgnoreCase("Informational")) {
+					informationalRiskCount++;
+				} else
+
+				System.out.println("no risk value returned !!! ");
+				
+			} 
+			System.out.println("Total  number of risks: " + riskList.size());
+			System.out.println("High Risk : " + highRiskCount + "\n" + "Medium Risk : " + mediumRiskCount + "\n Low Risk : " + lowRiskCount + "\n Informational Risk : " + informationalRiskCount);
+			// implement policy
+			
+			if (riskCheck.equalsIgnoreCase("Medium")) {
+				System.out.println( target + " FAILED POLICY CHECK");
+				probationList.remove(target);
+				System.out.println(" REGISTRATION REQUEST REJECTED ");
+//				cancel(info.getAppGroupName(), info.getId(), false);
+				handleCancelation(info.getAppGroupName(), info.getId(), false);
+
+			} else {
+				System.out.println( target + " PASSED POLICY CHECK");
+				probationList.remove(target);
+				System.out.println(" REGISTRATION REQUEST APPROVED ");
+				info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+				
+			}
+//			for (Risk policyRisk : riskList) {
+//				
+//				riskCheck=String.valueOf(policyRisk);
+				// implementing risk = HIGH
+//				if (riskCheck.equalsIgnoreCase("High")) {
+//					System.out.println( target + " FAILED POLICY CHECK");
+//					probationList.remove(target);
+//					handleCancelation(info.getAppGroupName(), info.getId(), false);
+//
+//				} else {
+//					probationList.remove(target);
+//					info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+//					
 //				}
-//				
-//				
 //			}
-//			GetTest.getJsonRReport(target);
-		} catch (Exception e) {
+			
+		}
+		
+		// // get the summary of the test i.e. passed or failed
+		// // the security policy modes are also enforced here
+		// if(result.toString().equals("fine") || result.toString()=="fine"){
+		// for (String instances : probationList) {
+		// if(instances.equals(target))
+		//// if (TESTING_MODE.equals("strict")) {
+		////
+		//// }
+		//
+		// probationList.remove(target);
+		// System.out.println(target + "removed from the probation list");
+		// System.out.println(instances);
+		// }
+		//
+		//
+		// }
+		// GetTest.getJsonRReport(target);
+		catch (Exception e) {
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
 		}
 		long stopTime = System.currentTimeMillis();
 		long timetaken = stopTime - startTime;
 		long timeSeconds = TimeUnit.MILLISECONDS.toSeconds(timetaken);
-		System.out.println("============  Done testing  for ==========  : " + info.getHomePageUrl() );
-		System.out.println("time taken for the scanning in milliseconds  "  + timetaken + " milliseconds");
+		System.out.println("============  Done testing  for ==========  : " + info.getHomePageUrl());
+		System.out.println("time taken for the scanning in milliseconds  " + timetaken + " milliseconds");
 
-		System.out.println("time taken for the scanning is "  + timeSeconds + " seconds");
-//		handleRegistration(info, defaultOpenForTrafficCount, isReplication);
+		System.out.println("time taken for the scanning is " + timeSeconds + " seconds");
+		// handleRegistration(info, defaultOpenForTrafficCount, isReplication);
 	}
 }
