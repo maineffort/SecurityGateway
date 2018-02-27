@@ -61,6 +61,7 @@ import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl;
 import com.netflix.eureka.resources.ServerCodecs;
 
 import lombok.extern.apachecommons.CommonsLog;
+import zap.report.SecurityTest;
 
 /**
  * @author Spencer Gibb
@@ -329,7 +330,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			// zapClient.pscan.enableAllScanners();
 			System.out.println("Active scan for : " + target);
 			// resp = api2.ascan.scan(target, null, null, null, null, null);
-			resp = zapClient.ascan.scan(target, null, null, "Insane Policy", null, null);// Advanced Policy-- the number
+			resp = zapClient.ascan.scan(target, null, null, "Default Policy", null, null);// Advanced Policy-- the number
 																							// of alerts is : 58 |
 																							// Default Policy |Hyper
 																							// Policy
@@ -394,24 +395,17 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 			}			
 			
-			// TODO policy check to confirm if to allow instance
 			System.out.println("setting the instance status to UP i.e.ready to receive traffic !");
 			System.out.println("alertString : ---- " + mut.toString().toString());
 //			info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
 
-			// assuming that the instance failed the security test -- not effective here
-			// better approach required
-
-			// handleCancelation(info.getAppGroupName(), info.getId(), false);
-
+	
 			String reportAggregator = "http://localhost:8081/alerts";
 			DefaultHttpClient client = new DefaultHttpClient();
 
 			// trigger the scan report retrieval
 			HttpPost post = new HttpPost(reportAggregator);
 			post.addHeader("User-Agent", USER_AGENT);
-
-			// String request = mut.toString();
 
 			StringEntity input = null;
 
@@ -425,7 +419,6 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			System.out.println("sending the result : " + input);
 			input.setContentType(MediaType.APPLICATION_JSON);
 			post.setEntity(input);
-			// post.setEntity(new UrlEncodedFormEntity(urlParameters));
 
 			System.out.println("Sending persistence request for : ");
 
@@ -445,8 +438,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 			System.out.println(result.toString());
 
-			// }
-//			probationList.remove(target);
+
 			System.out.println("########### Result Summary ####################");
 			for (Risk risks : riskList) {
 				riskCheck=String.valueOf(risks);
@@ -461,18 +453,17 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 					informationalRiskCount++;
 				} else
 
-				System.out.println("no risk value returned !!! ");
+				System.err.println("no risk value returned !!! ");
 				
 			} 
-			System.out.println("Total  number of risks: " + riskList.size());
-			System.out.println("High Risk : " + highRiskCount + "\n" + "Medium Risk : " + mediumRiskCount + "\n Low Risk : " + lowRiskCount + "\n Informational Risk : " + informationalRiskCount);
+			log("Total  number of risks: " + riskList.size());
+			log("High Risk : " + highRiskCount + "\n" + "Medium Risk : " + mediumRiskCount + "\n Low Risk : " + lowRiskCount + "\n Informational Risk : " + informationalRiskCount);
 			// implement policy
 			
 			if (riskCheck.equalsIgnoreCase("Medium")) {
-				System.out.println( target + " FAILED POLICY CHECK");
+				System.err.println(target + " FAILED POLICY CHECK");
 				probationList.remove(target);
-				System.out.println(" REGISTRATION REQUEST REJECTED ");
-//				cancel(info.getAppGroupName(), info.getId(), false);
+				System.err.println(" REGISTRATION REQUEST REJECTED ");
 				handleCancelation(info.getAppGroupName(), info.getId(), false);
 
 			} else {
@@ -482,41 +473,11 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 				info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
 				
 			}
-//			for (Risk policyRisk : riskList) {
-//				
-//				riskCheck=String.valueOf(policyRisk);
-				// implementing risk = HIGH
-//				if (riskCheck.equalsIgnoreCase("High")) {
-//					System.out.println( target + " FAILED POLICY CHECK");
-//					probationList.remove(target);
-//					handleCancelation(info.getAppGroupName(), info.getId(), false);
-//
-//				} else {
-//					probationList.remove(target);
-//					info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
-//					
-//				}
-//			}
+
 			
 		}
 		
-		// // get the summary of the test i.e. passed or failed
-		// // the security policy modes are also enforced here
-		// if(result.toString().equals("fine") || result.toString()=="fine"){
-		// for (String instances : probationList) {
-		// if(instances.equals(target))
-		//// if (TESTING_MODE.equals("strict")) {
-		////
-		//// }
-		//
-		// probationList.remove(target);
-		// System.out.println(target + "removed from the probation list");
-		// System.out.println(instances);
-		// }
-		//
-		//
-		// }
-		// GetTest.getJsonRReport(target);
+
 		catch (Exception e) {
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
@@ -528,6 +489,6 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		System.out.println("time taken for the scanning in milliseconds  " + timetaken + " milliseconds");
 
 		System.out.println("time taken for the scanning is " + timeSeconds + " seconds");
-		// handleRegistration(info, defaultOpenForTrafficCount, isReplication);
+		
 	}
 }
