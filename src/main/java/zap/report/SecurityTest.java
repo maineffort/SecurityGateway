@@ -42,7 +42,7 @@ public class SecurityTest {
 	}
 	public static void gateway(String target) throws ClientApiException{
 
-		
+	//test	
 //		ClientApi api2 = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 		 try {
 	            // Start spidering the target
