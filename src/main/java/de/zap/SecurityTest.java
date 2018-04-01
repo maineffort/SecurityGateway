@@ -1,11 +1,15 @@
-package zap.report;
+package de.zap;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.ws.rs.core.MediaType;
 
@@ -18,13 +22,10 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.zaproxy.clientapi.core.Alert;
 import org.zaproxy.clientapi.core.ApiResponse;
 import org.zaproxy.clientapi.core.ApiResponseElement;
 import org.zaproxy.clientapi.core.ClientApi;
 import org.zaproxy.clientapi.core.ClientApiException;
-
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 
 public class SecurityTest {
 	
@@ -34,14 +35,23 @@ public class SecurityTest {
 	private static final String ZAP_API_KEY = null;
 	private static final String TESTING_MODE = "strict";
 
-	public static ClientApi clientApi = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 	
 	public static void main(String[] args) throws ClientProtocolException, IOException, JSONException, ClientApiException {
 	SecurityTest.gateway ("http://localhost:8080"); //("https://cavas-test.herokuapp.com");
 		
 	}
-	public static void gateway(String target) throws ClientApiException{
+	public static void gateway(String target) throws ClientApiException, IOException{
 
+		
+//		Properties zapProperties = new Properties();
+//		InputStream input = new FileInputStream("security.properties");
+//		zapProperties.load(input);
+//		System.out.println(zapProperties.getProperty("zap.host") + ":" + Integer.parseInt(zapProperties.getProperty("zap.port")));
+		ClientApi clientApi = getZapServer(); //new ClientApi(zapProperties.getProperty("zap.host"),Integer.parseInt(zapProperties.getProperty("zap.port"))); 
+		//ZAP_ADDRESS, ZAP_PORT
+		
+//		ClientApi clientApi =  new ClientApi(ZAP_ADDRESS, ZAP_PORT);// getZapServer(); //ZAP_ADDRESS, ZAP_PORT
+		System.out.println("starting scan");
 	//test	
 //		ClientApi api2 = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 		 try {
@@ -172,6 +182,16 @@ public class SecurityTest {
 		}
 	}
 	
+	
+	public static ClientApi getZapServer() throws IOException {
+		Properties zapProperties = new Properties();
+		InputStream input = new FileInputStream("security.properties");
+		zapProperties.load(input);
+		System.out.println(zapProperties.getProperty("zap.host") + ":" + zapProperties.getProperty("zap.port"));
+		ClientApi clientApi = new ClientApi(zapProperties.getProperty("zap.host"),Integer.parseInt(zapProperties.getProperty("zap.port"))); 
+		//ZAP_ADDRESS, ZAP_PORT
+		return clientApi;
+	}
 	
 
 }

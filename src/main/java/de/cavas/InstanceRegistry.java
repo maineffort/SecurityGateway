@@ -1,4 +1,4 @@
-package eurekademo;
+package de.cavas;
 /*
  * Copyright 2013-2015 the original author or authors.
  *
@@ -60,8 +60,8 @@ import com.netflix.eureka.lease.Lease;
 import com.netflix.eureka.registry.PeerAwareInstanceRegistryImpl;
 import com.netflix.eureka.resources.ServerCodecs;
 
+import de.zap.SecurityTest;
 import lombok.extern.apachecommons.CommonsLog;
-import zap.report.SecurityTest;
 
 /**
  * @author Spencer Gibb
@@ -74,12 +74,8 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	private static List<String> probationList = new ArrayList<String>(); // probation list for temporary registration
 
 	private final static String USER_AGENT = "Mozilla/5.0";
-	private static final String ZAP_ADDRESS = "localhost";
-	private static final int ZAP_PORT = 8181;
-	private static final String ZAP_API_KEY = null;
 	private static final String TESTING_MODE = "strict";
 
-	public static ClientApi api = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
 
 	// register the instances that are enrolled in the service
 	public InstanceRegistry(EurekaServerConfig serverConfig, EurekaClientConfig clientConfig, ServerCodecs serverCodecs,
@@ -255,7 +251,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	}
 
 	public void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication)
-			throws JSONException, ClientApiException, MalformedURLException {
+			throws JSONException, ClientApiException, IOException {
 
 		JSONObject obj = new JSONObject();
 		long startTime = System.currentTimeMillis();
@@ -268,7 +264,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 	
 		String timeStamp = SecurityTest.getTime();
 
-		ClientApi zapClient = new ClientApi(ZAP_ADDRESS, ZAP_PORT);
+		ClientApi zapClient = SecurityTest.getZapServer();
 		System.out.println(" Prepping for pre-assessment security test@instance registry  " + target);
 	
 		// test for gateway default port -- workaround
