@@ -65,6 +65,7 @@ import lombok.extern.apachecommons.CommonsLog;
 
 /**
  * @author Spencer Gibb
+ * @author Kennedy
  */
 @CommonsLog
 public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements ApplicationContextAware {
