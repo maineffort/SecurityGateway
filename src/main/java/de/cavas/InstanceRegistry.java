@@ -251,6 +251,9 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 		return leaseDuration;
 	}
 
+	
+//	TODO : docker-compose for getting the pulling OWASP ZAP and configuring it with the securitygateway 
+	
 	public void preRegistrationSecurityTest(String target, InstanceInfo info, boolean isReplication)
 			throws JSONException, ClientApiException, IOException {
 
@@ -390,7 +393,7 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 				mut.put("reference", alert.getReference());
 				mut.put("reliability", alert.getReliability());
 
-			}			
+						
 			
 			System.out.println("setting the instance status to UP i.e.ready to receive traffic !");
 			System.out.println("alertString : ---- " + mut.toString().toString());
@@ -434,51 +437,55 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 			}
 
 			System.out.println(result.toString());
+			System.out.println("the results: " +  alertList.size());
 
 
-			System.out.println("########### Result Summary ####################");
-			for (Risk risks : riskList) {
-				riskCheck=String.valueOf(risks);
-				
-				if (riskCheck.equalsIgnoreCase("High")) {
-					highRiskCount++;
-				} else if (riskCheck.equalsIgnoreCase("Medium")) {
-					mediumRiskCount++;
-				} else if (riskCheck.equalsIgnoreCase("Low")) {
-					lowRiskCount++;
-				} else if (riskCheck.equalsIgnoreCase("Informational")) {
-					informationalRiskCount++;
-				} else
 
-				System.err.println("no risk value returned !!! ");
-				
-			} 
-			log("Total  number of risks: " + riskList.size());
-			log("High Risk : " + highRiskCount + "\n" + "Medium Risk : " + mediumRiskCount + "\n Low Risk : " + lowRiskCount + "\n Informational Risk : " + informationalRiskCount);
+//			System.out.println("########### Result Summary ####################");
+//			for (Risk risks : riskList) {
+//				riskCheck=String.valueOf(risks);
+//				
+//				if (riskCheck.equalsIgnoreCase("High")) {
+//					highRiskCount++;
+//				} else if (riskCheck.equalsIgnoreCase("Medium")) {
+//					mediumRiskCount++;
+//				} else if (riskCheck.equalsIgnoreCase("Low")) {
+//					lowRiskCount++;
+//				} else if (riskCheck.equalsIgnoreCase("Informational")) {
+//					informationalRiskCount++;
+//				} else
+//
+//				System.err.println("no risk value returned !!! ");
+//				
+//			} 
+//			log("Total  number of risks: " + riskList.size());
+//			log("High Risk : " + highRiskCount + "\n" + "Medium Risk : " + mediumRiskCount + "\n Low Risk : " + lowRiskCount + "\n Informational Risk : " + informationalRiskCount);
 			// implement policy
 			
-			if (riskCheck.equalsIgnoreCase("Medium")) {
-				System.err.println(target + " FAILED POLICY CHECK");
-				probationList.remove(target);
-				System.err.println(" REGISTRATION REQUEST REJECTED ");
-				handleCancelation(info.getAppGroupName(), info.getId(), false);
-
-			} else {
-				System.out.println( target + " PASSED POLICY CHECK");
-				probationList.remove(target);
-				System.out.println(" REGISTRATION REQUEST APPROVED ");
-				info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
-				
-			}
+//			if (riskCheck.equalsIgnoreCase("Medium")) {
+//				System.err.println(target + " FAILED POLICY CHECK");
+//				probationList.remove(target);
+//				System.err.println(" REGISTRATION REQUEST REJECTED ");
+//				handleCancelation(info.getAppGroupName(), info.getId(), false);
+//
+//			} else {
+//				System.out.println( target + " PASSED POLICY CHECK");
+//				probationList.remove(target);
+//				System.out.println(" REGISTRATION REQUEST APPROVED ");
+//				info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+//				
+//			}
 
 			
 		}
 		
 
+		}
 		catch (Exception e) {
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
 		}
+		
 		long stopTime = System.currentTimeMillis();
 		long timetaken = stopTime - startTime;
 		long timeSeconds = TimeUnit.MILLISECONDS.toSeconds(timetaken);

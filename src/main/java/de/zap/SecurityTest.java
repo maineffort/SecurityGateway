@@ -36,10 +36,10 @@ public class SecurityTest {
 	private static final String TESTING_MODE = "strict";
 
 	
-	public static void main(String[] args) throws ClientProtocolException, IOException, JSONException, ClientApiException {
-	SecurityTest.gateway ("http://localhost:8080"); //("https://cavas-test.herokuapp.com");
-		
-	}
+//	public static void main(String[] args) throws ClientProtocolException, IOException, JSONException, ClientApiException {
+//	SecurityTest.gateway ("http://localhost:8080"); //("https://cavas-test.herokuapp.com");
+//		
+//	}
 	public static void gateway(String target) throws ClientApiException, IOException{
 
 		
