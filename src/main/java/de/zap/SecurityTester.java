@@ -27,7 +27,7 @@ import org.zaproxy.clientapi.core.ApiResponseElement;
 import org.zaproxy.clientapi.core.ClientApi;
 import org.zaproxy.clientapi.core.ClientApiException;
 
-public class SecurityTest {
+public class SecurityTester {
 	
 	private final static String USER_AGENT = "Mozilla/5.0";
 	private static final String ZAP_ADDRESS = "localhost";

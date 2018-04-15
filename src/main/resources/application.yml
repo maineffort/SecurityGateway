@@ -13,6 +13,21 @@ eureka:
   server:
     waitTimeInMsWhenSyncEmpty: 0
     
+spring:
+  datasource:
+    url: jdbc:mysql://seclab.hpi.uni-potsdam.de:50049/vulncorrelate?useSSL=false
+    username: cavas
+    password: slingshot
+    platform: mysql
+    initialize: false
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    generate-ddl: true
+    spring.jpa.show-sql: true
+    hibernate.ddl-auto: update
+    
+    
+    
 #springfox.documentation.swagger.v2.path=/swagger.json
     
     # prefix for all requests
