@@ -6,6 +6,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Lob;
+import javax.persistence.Table;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,6 +15,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
+//@Table(name = "alert")
+
 //@JsonPropertyOrder({
 //    "sourceid",
 //    "other",
@@ -123,7 +127,43 @@ public class Alert {
         return sourceid;
     }
 
-    @JsonProperty("sourceid")
+    public Alert(String microserviceName, String microservicePort, String microserviceIpAddress, String microserviceId,
+			String timeStamp, String sourceid, String other, String method, String evidence, String pluginId,
+			String cweid, String confidence, String wascid, String description, String messageId, String url,
+			String reference, String solution, String alert, String param, String attack, String name, String risk,
+			int id) {
+		super();
+		this.microserviceName = microserviceName;
+		this.microservicePort = microservicePort;
+		this.microserviceIpAddress = microserviceIpAddress;
+		this.microserviceId = microserviceId;
+		this.timeStamp = timeStamp;
+		this.sourceid = sourceid;
+		this.other = other;
+		this.method = method;
+		this.evidence = evidence;
+		this.pluginId = pluginId;
+		this.cweid = cweid;
+		this.confidence = confidence;
+		this.wascid = wascid;
+		this.description = description;
+		this.messageId = messageId;
+		this.url = url;
+		this.reference = reference;
+		this.solution = solution;
+		this.alert = alert;
+		this.param = param;
+		this.attack = attack;
+		this.name = name;
+		this.risk = risk;
+		this.id = id;
+	}
+
+	public Alert() {
+		// TODO Auto-generated constructor stub
+	}
+
+	@JsonProperty("sourceid")
     public void setSourceid(String sourceid) {
         this.sourceid = sourceid;
     }

@@ -35,34 +35,32 @@ import org.zaproxy.clientapi.core.Alert.Risk;
 
 import com.netflix.appinfo.InstanceInfo;
 
+import de.cavas.repository.AlertController;
 import de.cavas.repository.AlertRepository;
 import de.zap.SecurityTester;
-import scala.annotation.meta.setter;
 
-
-@Controller 
+//@Controller
 public class SecurityTest {
-	
+
 	private final static String USER_AGENT = "Mozilla/5.0";
 	private static final String TESTING_MODE = "strict";
 
-	
-	@Autowired
-	static AlertRepository alertRepository;
+//	@Autowired
+//	static AlertRepository alertRepository;
 
-
-	public static String  preRegistrationTest(String target, InstanceInfo info, boolean isReplication)
+	public static String preRegistrationTest(String target, InstanceInfo info, boolean isReplication)
 			throws JSONException, ClientApiException, IOException {
 
 		String testOutcome = null;
-		
+		AlertController controller = new AlertController();
+
 		JSONObject obj = new JSONObject();
 		long startTime = System.currentTimeMillis();
 		String riskCheck = null;
-//		int lowRiskCount = 0;
-//		int mediumRiskCount = 0;
-//		int highRiskCount = 0;
-//		int informationalRiskCount = 0;
+		// int lowRiskCount = 0;
+		// int mediumRiskCount = 0;
+		// int highRiskCount = 0;
+		// int informationalRiskCount = 0;
 		List<Risk> riskList = new ArrayList<>();
 
 		String timeStamp = SecurityTest.getTime();
@@ -170,131 +168,132 @@ public class SecurityTest {
 			List<Alert> alertList = zapClient.getAlerts(target, 0, 0);
 			// zapClient.core.alerts(target, start, count);
 			System.out.println("the number of alerts is : " + hh);
+			de.cavas.model.Alert cavasAlert = new de.cavas.model.Alert();
 			for (Alert alert : alertList) {
-				de.cavas.model.Alert cavasAlert = new de.cavas.model.Alert();
 				// System.out.println(alert.getAlert());
-//				mut.put("alert", alert.getAlert());
+				// mut.put("alert", alert.getAlert());
 				cavasAlert.setMicroserviceName(info.getAppName());// http://localhost:8761/
 				cavasAlert.setMicroservicePort(String.valueOf(port));
 				cavasAlert.setMicroservicePort((info.getIPAddr()));
 				cavasAlert.setMicroserviceId((info.getId()));
 				cavasAlert.setTimeStamp(getTime());
 				cavasAlert.setAlert(alert.getAlert());
-//				mut.put("risk", alert.getRisk());
+				// mut.put("risk", alert.getRisk());
 				cavasAlert.setRisk(alert.getRisk().toString());
-				 System.out.println("risk :" + alert.getRisk());
+				System.out.println("risk :" + alert.getRisk());
 				riskList.add(alert.getRisk());
+				testOutcome = PolicyCheck.riskCheck(riskList);
 				// riskCheck = String.valueOf(alert.getRisk());
-//				mut.put("confidence", alert.getConfidence());
+				// mut.put("confidence", alert.getConfidence());
 				cavasAlert.setConfidence(alert.getConfidence().toString());
-//				cavasAlert.setAlert(alert.getAlert());
+				// cavasAlert.setAlert(alert.getAlert());
 				mut.put("url", alert.getUrl());
 				cavasAlert.setUrl((alert.getUrl().toString()));
-//				mut.put("param", alert.getParam());
+				// mut.put("param", alert.getParam());
 				cavasAlert.setParam(alert.getParam().toString());
-//				mut.put("solution", alert.getSolution());
+				// mut.put("solution", alert.getSolution());
 				cavasAlert.setSolution(alert.getSolution());
-//				mut.put("cweid", alert.getCweId());
+				// mut.put("cweid", alert.getCweId());
 				cavasAlert.setCweid(String.valueOf(alert.getCweId()));
-//				mut.put("wascid", alert.getWascId());
+				// mut.put("wascid", alert.getWascId());
 				cavasAlert.setWascid(String.valueOf(alert.getWascId()));
-//				mut.put("attack", alert.getAttack());
+				// mut.put("attack", alert.getAttack());
 				cavasAlert.setAttack(alert.getAttack());
-//				mut.put("description", alert.getDescription());
+				// mut.put("description", alert.getDescription());
 				cavasAlert.setDescription(alert.getDescription());
-//				mut.put("evidence", alert.getEvidence());
+				// mut.put("evidence", alert.getEvidence());
 				cavasAlert.setEvidence(alert.getEvidence());
-//				mut.put("name", alert.getName());
+				// mut.put("name", alert.getName());
 				cavasAlert.setName(alert.getName());
-//				mut.put("pluginid", alert.getPluginId());
+				// mut.put("pluginid", alert.getPluginId());
 				cavasAlert.setPluginId(alert.getPluginId());
-//				mut.put("reference", alert.getReference());
+				// mut.put("reference", alert.getReference());
 				cavasAlert.setReference(alert.getReference());
-//				mut.put("reliability", alert.getReliability());
-//				cavasAlert.setRel(alert.getReliability());
+				// mut.put("reliability", alert.getReliability());
+				// cavasAlert.setRel(alert.getReliability());
 
 				System.out.println("setting the instance status to UP i.e.ready to receive traffic !");
-//				System.out.println("alertString : ---- " + mut.toString().toString());
+				// System.out.println("alertString : ---- " + mut.toString().toString());
 				// info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
 				System.out.println("saving to db ....");
-System.out.println(cavasAlert);
-				alertRepository.save(cavasAlert);
+				System.out.println(cavasAlert);
 				System.out.println("roger ....");
-//				String reportAggregator = "http://localhost:8081/alerts";
-//				DefaultHttpClient client = new DefaultHttpClient();
-//
-//				// trigger the scan report retrieval
-//				HttpPost post = new HttpPost(reportAggregator);
-//				post.addHeader("User-Agent", USER_AGENT);
-//
-//				StringEntity input = null;
-//
-//				try {
-//					input = new StringEntity(mut.toString().toString());
-//				} catch (UnsupportedEncodingException e1) {
-//					// TODO Auto-generated catch block
-//					e1.printStackTrace();
-//				}
-//
-//				System.out.println("sending the result : " + input);
-//				input.setContentType(MediaType.APPLICATION_JSON);
-//				post.setEntity(input);
-//
-//				System.out.println("Sending persistence request for : ");
-//
-//				HttpResponse response = client.execute(post);
-//				// get the results
-//				System.out.println("\nSending 'POST' request to URL : " + reportAggregator);
-//				System.out.println("Post parameters : " + post.getEntity());
-//				System.out.println("Response Code : " + response.getStatusLine().getStatusCode());
-//
-//				BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-//
-//				StringBuffer result = new StringBuffer();
-//				String line = "";
-//				while ((line = rd.readLine()) != null) {
-//					result.append(line);
-//				}
+				// String reportAggregator = "http://localhost:8081/alerts";
+				// DefaultHttpClient client = new DefaultHttpClient();
+				//
+				// // trigger the scan report retrieval
+				// HttpPost post = new HttpPost(reportAggregator);
+				// post.addHeader("User-Agent", USER_AGENT);
+				//
+				// StringEntity input = null;
+				//
+				// try {
+				// input = new StringEntity(mut.toString().toString());
+				// } catch (UnsupportedEncodingException e1) {
+				// // TODO Auto-generated catch block
+				// e1.printStackTrace();
+				// }
+				//
+				// System.out.println("sending the result : " + input);
+				// input.setContentType(MediaType.APPLICATION_JSON);
+				// post.setEntity(input);
+				//
+				// System.out.println("Sending persistence request for : ");
+				//
+				// HttpResponse response = client.execute(post);
+				// // get the results
+				// System.out.println("\nSending 'POST' request to URL : " + reportAggregator);
+				// System.out.println("Post parameters : " + post.getEntity());
+				// System.out.println("Response Code : " +
+				// response.getStatusLine().getStatusCode());
+				//
+				// BufferedReader rd = new BufferedReader(new
+				// InputStreamReader(response.getEntity().getContent()));
+				//
+				// StringBuffer result = new StringBuffer();
+				// String line = "";
+				// while ((line = rd.readLine()) != null) {
+				// result.append(line);
+				// }
 
-//				System.out.println(result.toString());
-//				System.out.println("the results: " + alertList.size());
+				// System.out.println(result.toString());
+				// System.out.println("the results: " + alertList.size());
 
 				// System.out.println("########### Result Summary ####################");
-				testOutcome = PolicyCheck.riskCheck(riskList);
-				
-				 System.out.println(testOutcome + "at Security test" );
-//				 implement policy
 
-//				 if (riskCheck.equalsIgnoreCase("Medium")) {
-//				 System.err.println(target + " FAILED POLICY CHECK");
-//				 probationList.remove(target);
-//				 System.err.println(" REGISTRATION REQUEST REJECTED ");
-//				 handleCancelation(info.getAppGroupName(), info.getId(), false);
-//				//
-//				 } else {
-//				 System.out.println( target + " PASSED POLICY CHECK");
-//				 probationList.remove(target);
-//				 System.out.println(" REGISTRATION REQUEST APPROVED ");
-//				 info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
-//				
-//				 }
+				System.out.println(testOutcome + "    at Security test");
+				// implement policy
 
+				// if (riskCheck.equalsIgnoreCase("Medium")) {
+				// System.err.println(target + " FAILED POLICY CHECK");
+				// probationList.remove(target);
+				// System.err.println(" REGISTRATION REQUEST REJECTED ");
+				// handleCancelation(info.getAppGroupName(), info.getId(), false);
+				// //
+				// } else {
+				// System.out.println( target + " PASSED POLICY CHECK");
+				// probationList.remove(target);
+				// System.out.println(" REGISTRATION REQUEST APPROVED ");
+				// info.setStatus(com.netflix.appinfo.InstanceInfo.InstanceStatus.UP);
+				//
+				// }
+
+				controller.addNewAlert(cavasAlert);
 			}
-
+//			alertRepository.save(cavasAlert);
 		} catch (Exception e) {
 			System.out.println("Exception : " + e.getMessage());
 			e.printStackTrace();
 		}
 
-		long stopTime = System.currentTimeMillis();
-		long timetaken = stopTime - startTime;
-		long timeSeconds = TimeUnit.MILLISECONDS.toSeconds(timetaken);
-		System.out.println("============  Done testing  for ==========  : " + info.getHomePageUrl());
-		System.out.println("time taken for the scanning in milliseconds  " + timetaken + " milliseconds");
+//		long stopTime = System.currentTimeMillis();
+//		long timetaken = stopTime - startTime;
+//		long timeSeconds = TimeUnit.MILLISECONDS.toSeconds(timetaken);
+//		System.out.println("============  Done testing  for ==========  : " + info.getHomePageUrl());
+//		System.out.println("time taken for the scanning in milliseconds  " + timetaken + " milliseconds");
+//
+//		System.out.println("time taken for the scanning is " + timeSeconds + " seconds");
 
-		System.out.println("time taken for the scanning is " + timeSeconds + " seconds");
-
-		
 		return testOutcome;
 	}
 

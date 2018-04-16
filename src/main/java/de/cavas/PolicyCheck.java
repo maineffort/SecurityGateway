@@ -96,6 +96,7 @@ public class PolicyCheck {
 		//
 		// }
 
+		System.out.println(riskAnalysis + " @ PolicyCheck");
 		return riskAnalysis;
 
 	}
