@@ -9,16 +9,16 @@ The project was cloned from https://github.com/dsyer/eureka.git and several secu
 5. Security gateway will test all microservice prior to deployment. 
 6. Note that microservice have to be OpenAPI compliant i.e. should generate an OpenAPI document, which is used for security testing.
  
-For more details about this work see the paper : `Integrating Continuous Security Assessments in Microservices and Cloud Native Applications`
+For more details about this work see the paper : [Integrating Continuous Security Assessments in Microservices and Cloud Native Applications](https://www.researchgate.net/publication/320596749_Integrating_Continuous_Security_Assessments_in_Microservices_and_Cloud_Native_Applications)
 
 Please, cite if useful for your research:
 
-@inproceedings{torkura2017integrating,
-  title={Integrating Continuous Security Assessments in Microservices and Cloud Native Applications},
-  author={Torkura, Kennedy A and Sukmana, Muhammad IH and Meinel, Christoph},
-  booktitle={Proceedings of the10th International Conference on Utility and Cloud Computing},
-  pages={171--180},
-  year={2017},
-  organization={ACM}
-}
+`@inproceedings{torkura2017integrating,`
+ `title={Integrating Continuous Security Assessments in Microservices and Cloud Native Applications},`
+ `author={Torkura, Kennedy A and Sukmana, Muhammad IH and Meinel, Christoph},`
+ `booktitle={Proceedings of the10th International Conference on Utility and Cloud Computing},`
+ `pages={171--180},`
+ `year={2017},`
+ `organization={ACM}`
+`}`
 
