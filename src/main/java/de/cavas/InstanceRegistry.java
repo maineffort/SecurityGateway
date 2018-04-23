@@ -247,7 +247,8 @@ public class InstanceRegistry extends PeerAwareInstanceRegistryImpl implements A
 
 		// trigger pre-registration security test , ideally should send this request to
 		// the security service
-		String secTestOutcome = SecurityTest.preRegistrationTest(info.getHomePageUrl(), info, isReplication);
+		SecurityTest securityTest= new SecurityTest();
+		String secTestOutcome = securityTest.preRegistrationTest(info.getHomePageUrl(), info, isReplication);
 		System.out.println("secTestOutcome: " + secTestOutcome);
 		// publishEvent(new EurekaInstanceRegisteredEvent(this, info, leaseDuration,
 		// isReplication));

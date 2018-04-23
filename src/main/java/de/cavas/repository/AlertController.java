@@ -22,10 +22,13 @@ public class AlertController {
 		// @ResponseBody means the returned String is the response, not a view name
 		// @RequestParam means it is a parameter from the GET or POST request
 
-		Alert alert = new Alert();
-		alert.setAlert(cavasAlert.getAlert());
-		alert.setAttack(cavasAlert.getAttack());
-		alertRepository.save(alert);
+//		Alert alert = new Alert();
+//		alert.setAlert(cavasAlert.getAlert());
+//		alert.setAttack(cavasAlert.getAttack());
+//		System.out.println("cavasAlert: " + cavasAlert);
+//		System.out.println("alert: " + alert);
+		System.out.println("cavasAlert @ AlertController: " + cavasAlert);
+		alertRepository.save(cavasAlert);
 //		(microserviceName,  microservicePort,  microserviceIpAddress, microserviceId,
 //				 timeStamp,  sourceid,  other,  method,  evidence,  pluginId,
 //				 cweid,  confidence,  wascid,  description,  messageId,  url,

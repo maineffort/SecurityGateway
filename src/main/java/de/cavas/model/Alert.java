@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @JsonInclude(JsonInclude.Include.NON_NULL)
-//@Table(name = "alert")
+@Table(name = "alert2")
 
 //@JsonPropertyOrder({
 //    "sourceid",

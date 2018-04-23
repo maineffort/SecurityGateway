@@ -45,14 +45,14 @@ public class SecurityTest {
 	private final static String USER_AGENT = "Mozilla/5.0";
 	private static final String TESTING_MODE = "strict";
 
-//	@Autowired
+	@Autowired
 //	static AlertRepository alertRepository;
+	AlertController controller;// = new AlertController();
 
-	public static String preRegistrationTest(String target, InstanceInfo info, boolean isReplication)
+	public  String preRegistrationTest(String target, InstanceInfo info, boolean isReplication)
 			throws JSONException, ClientApiException, IOException {
 
 		String testOutcome = null;
-		AlertController controller = new AlertController();
 
 		JSONObject obj = new JSONObject();
 		long startTime = System.currentTimeMillis();
@@ -218,44 +218,46 @@ public class SecurityTest {
 				System.out.println("saving to db ....");
 				System.out.println(cavasAlert);
 				System.out.println("roger ....");
-				// String reportAggregator = "http://localhost:8081/alerts";
-				// DefaultHttpClient client = new DefaultHttpClient();
+				
+				// walk-around for the bug 
+				 String reportAggregator = "http://localhost:8081/alerts";
+				 DefaultHttpClient client = new DefaultHttpClient();
+				
+				 // trigger the scan report retrieval
+				 HttpPost post = new HttpPost(reportAggregator);
+				 post.addHeader("User-Agent", USER_AGENT);
+				
+				 StringEntity input = null;
+				
+				 try {
+				 input = new StringEntity(mut.toString().toString());
+				 } catch (UnsupportedEncodingException e1) {
+				 // TODO Auto-generated catch block
+				 e1.printStackTrace();
+				 }
+				
+				 System.out.println("sending the result : " + input);
+				 input.setContentType(MediaType.APPLICATION_JSON);
+				 post.setEntity(input);
+				
+				 System.out.println("Sending persistence request for : ");
+				
+				 HttpResponse response = client.execute(post);
+				 // get the results
+				 System.out.println("\nSending 'POST' request to URL : " + reportAggregator);
+				 System.out.println("Post parameters : " + post.getEntity());
+				 System.out.println("Response Code : " +
+				 response.getStatusLine().getStatusCode());
 				//
-				// // trigger the scan report retrieval
-				// HttpPost post = new HttpPost(reportAggregator);
-				// post.addHeader("User-Agent", USER_AGENT);
-				//
-				// StringEntity input = null;
-				//
-				// try {
-				// input = new StringEntity(mut.toString().toString());
-				// } catch (UnsupportedEncodingException e1) {
-				// // TODO Auto-generated catch block
-				// e1.printStackTrace();
-				// }
-				//
-				// System.out.println("sending the result : " + input);
-				// input.setContentType(MediaType.APPLICATION_JSON);
-				// post.setEntity(input);
-				//
-				// System.out.println("Sending persistence request for : ");
-				//
-				// HttpResponse response = client.execute(post);
-				// // get the results
-				// System.out.println("\nSending 'POST' request to URL : " + reportAggregator);
-				// System.out.println("Post parameters : " + post.getEntity());
-				// System.out.println("Response Code : " +
-				// response.getStatusLine().getStatusCode());
-				//
-				// BufferedReader rd = new BufferedReader(new
-				// InputStreamReader(response.getEntity().getContent()));
-				//
-				// StringBuffer result = new StringBuffer();
-				// String line = "";
-				// while ((line = rd.readLine()) != null) {
-				// result.append(line);
-				// }
-
+				 BufferedReader rd = new BufferedReader(new
+				 InputStreamReader(response.getEntity().getContent()));
+				
+				 StringBuffer result = new StringBuffer();
+				 String line = "";
+				 while ((line = rd.readLine()) != null) {
+				 result.append(line);
+				 }
+//
 				// System.out.println(result.toString());
 				// System.out.println("the results: " + alertList.size());
 
@@ -264,6 +266,10 @@ public class SecurityTest {
 				System.out.println(testOutcome + "    at Security test");
 				// implement policy
 
+				
+				
+				// for using spring data
+//				controller.addNewAlert(cavasAlert);
 				// if (riskCheck.equalsIgnoreCase("Medium")) {
 				// System.err.println(target + " FAILED POLICY CHECK");
 				// probationList.remove(target);
@@ -278,7 +284,6 @@ public class SecurityTest {
 				//
 				// }
 
-				controller.addNewAlert(cavasAlert);
 			}
 //			alertRepository.save(cavasAlert);
 		} catch (Exception e) {
