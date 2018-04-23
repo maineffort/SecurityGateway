@@ -302,6 +302,7 @@ public class SecurityTest {
 		return testOutcome;
 	}
 
+	//get the zap server
 	public static ClientApi getZapServer() throws IOException {
 		Properties zapProperties = new Properties();
 		InputStream input = new FileInputStream("security.properties");
