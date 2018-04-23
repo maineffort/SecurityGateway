@@ -15,9 +15,9 @@ eureka:
     
 spring:
   datasource:
-    url: jdbc:mysql://seclab.hpi.uni-potsdam.de:50049/vulncorrelate?useSSL=false
-    username: cavas
-    password: slingshot
+    url:
+    username: 
+    password: 
     platform: mysql
     initialize: false
   jpa:
